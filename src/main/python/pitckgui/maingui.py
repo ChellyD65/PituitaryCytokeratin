@@ -8,14 +8,17 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QProgressBar, QPushButton, QFileDialog, QRadioButton, QScrollBar, QSizePolicy,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTabWidget, QTextEdit,
         QVBoxLayout, QWidget)
-from PyQt5.QtGui import QPixmap
-import os
+from PyQt5.QtGui import QPixmap, QImage, qRgb
 
+import os
+import numpy as np
 
 class MainGUI(QDialog):
 
-    def __init__(self, parent=None):
+    def __init__(self, parent=None, imageoperator=None):
         super(MainGUI, self).__init__(parent)
+
+        self.imageoperator = imageoperator
 
         self.originalPalette = QApplication.palette()
 
@@ -29,29 +32,18 @@ class MainGUI(QDialog):
         self.btnFileOpen.clicked.connect(self.getfile)
 
         self.leInputImage = QLabel()
-        self.leInputImage.setPixmap(QPixmap(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..','..','resources','emptyspace.png'))).scaledToHeight(300))
+        self.leInputImage.setPixmap(QPixmap(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..','..','resources','emptyspace.png'))).scaledToHeight(400))
 
         self.leOutputImage = QLabel()
-        self.leOutputImage.setPixmap(QPixmap(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..','..','resources','emptyspace.png'))).scaledToHeight(300))
+        self.leOutputImage.setPixmap(QPixmap(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..','..','resources','emptyspace.png'))).scaledToHeight(400))
 
-        # self.useStylePaletteCheckBox = QCheckBox("&Use style's standard palette")
-        # self.useStylePaletteCheckBox.setChecked(True)
-
-        # disableWidgetsCheckBox = QCheckBox("&Disable widgets")
-
-        self.createTopLeftGroupBox()
-        self.createTopRightGroupBox()
+        #self.createTopLeftGroupBox()
+        #self.createTopRightGroupBox()
         self.createBottomLeftTabWidget()
-        self.createBottomRightGroupBox()
+        self.createBottomLeftGroupBox()
         self.createProgressBar()
 
-        # self.useStylePaletteCheckBox.toggled.connect(self.changePalette)
-        # disableWidgetsCheckBox.toggled.connect(self.topLeftGroupBox.setDisabled)
-        # disableWidgetsCheckBox.toggled.connect(self.topRightGroupBox.setDisabled)
-        # disableWidgetsCheckBox.toggled.connect(self.bottomLeftTabWidget.setDisabled)
-        # disableWidgetsCheckBox.toggled.connect(self.bottomRightGroupBox.setDisabled)
-
-
+        # Top row of GUI, with image displays
         topLeftLayout = QGroupBox("Input Image")
         layout = QVBoxLayout()
         layout.addWidget(self.leInputImage)
@@ -75,8 +67,8 @@ class MainGUI(QDialog):
         mainLayout.addLayout(topLayout, 0, 0, 1, 2)
         # mainLayout.addWidget(self.topLeftGroupBox, 1, 0)
         # mainLayout.addWidget(self.topRightGroupBox, 1, 1)
-        mainLayout.addWidget(self.bottomLeftTabWidget, 2, 0)
-        mainLayout.addWidget(self.bottomRightGroupBox, 2, 1)
+        mainLayout.addWidget(self.bottomLeftTabWidget, 2, 1)
+        mainLayout.addWidget(self.bottomLeftGroupBox, 2, 0)
         mainLayout.addWidget(self.progressBar, 3, 0, 1, 2)
         mainLayout.setRowStretch(1, 1)
         mainLayout.setRowStretch(2, 1)
@@ -87,16 +79,6 @@ class MainGUI(QDialog):
         self.setWindowTitle("Pituitary Cytokeratin Spatial Frequency")
         QApplication.setStyle(QStyleFactory.create('Fusion'))
         QApplication.setPalette(QApplication.style().standardPalette())
-
-    # def changeStyle(self, styleName):
-    #     QApplication.setStyle(QStyleFactory.create(styleName))
-    #     self.changePalette()
-
-    # def changePalette(self):
-    #     if (self.useStylePaletteCheckBox.isChecked()):
-    #         QApplication.setPalette(QApplication.style().standardPalette())
-    #     else:
-    #         QApplication.setPalette(self.originalPalette)
 
     def advanceProgressBar(self):
         curVal = self.progressBar.value()
@@ -174,52 +156,72 @@ class MainGUI(QDialog):
         self.bottomLeftTabWidget.addTab(tab1, "&Table")
         self.bottomLeftTabWidget.addTab(tab2, "Text &Edit")
 
-    def createBottomRightGroupBox(self):
-        self.bottomRightGroupBox = QGroupBox("Group 3")
-        self.bottomRightGroupBox.setCheckable(True)
-        self.bottomRightGroupBox.setChecked(True)
+    def createBottomLeftGroupBox(self):
+        self.bottomLeftGroupBox = QGroupBox("Processing")
+        # self.bottomLeftGroupBox.setCheckable(True)
+        # self.bottomLeftGroupBox.setChecked(True)
 
         lineEdit = QLineEdit('s3cRe7')
-        lineEdit.setEchoMode(QLineEdit.Password)
+        #lineEdit.setEchoMode(QLineEdit.Password)
 
-        spinBox = QSpinBox(self.bottomRightGroupBox)
+        spinBox = QSpinBox(self.bottomLeftGroupBox)
         spinBox.setValue(50)
 
-        dateTimeEdit = QDateTimeEdit(self.bottomRightGroupBox)
-        dateTimeEdit.setDateTime(QDateTime.currentDateTime())
+        #dateTimeEdit = QDateTimeEdit(self.bottomLeftGroupBox)
+        #dateTimeEdit.setDateTime(QDateTime.currentDateTime())
 
-        slider = QSlider(Qt.Horizontal, self.bottomRightGroupBox)
+        slider = QSlider(Qt.Horizontal, self.bottomLeftGroupBox)
         slider.setValue(40)
 
-        scrollBar = QScrollBar(Qt.Horizontal, self.bottomRightGroupBox)
-        scrollBar.setValue(60)
+        # scrollBar = QScrollBar(Qt.Horizontal, self.bottomLeftGroupBox)
+        # scrollBar.setValue(60)
 
-        dial = QDial(self.bottomRightGroupBox)
+        dial = QDial(self.bottomLeftGroupBox)
         dial.setValue(30)
         dial.setNotchesVisible(True)
 
+        self.btnProcess = QPushButton("Process!")
+        self.btnProcess.clicked.connect(self.processInputImage)
+
         layout = QGridLayout()
-        layout.addWidget(lineEdit, 0, 0, 1, 2)
+        #layout.addWidget(lineEdit, 0, 0, 1, 2)
         layout.addWidget(spinBox, 1, 0, 1, 2)
-        layout.addWidget(dateTimeEdit, 2, 0, 1, 2)
+        #layout.addWidget(dateTimeEdit, 2, 0, 1, 2)
         layout.addWidget(slider, 3, 0)
-        layout.addWidget(scrollBar, 4, 0)
+        #layout.addWidget(scrollBar, 4, 0)
         layout.addWidget(dial, 3, 1, 2, 1)
+        layout.addWidget(self.btnProcess)
         layout.setRowStretch(5, 1)
-        self.bottomRightGroupBox.setLayout(layout)
+        self.bottomLeftGroupBox.setLayout(layout)
 
     def createProgressBar(self):
         self.progressBar = QProgressBar()
         self.progressBar.setRange(0, 10000)
         self.progressBar.setValue(0)
 
-        timer = QTimer(self)
-        timer.timeout.connect(self.advanceProgressBar)
-        timer.start(1000)
+        #timer = QTimer(self)
+        #timer.timeout.connect(self.advanceProgressBar)
+        #timer.start(1000)
 
     def getfile(self):
         self.inputfname = QFileDialog.getOpenFileName(self, 'Open file', 
                                                       '~',"Image files (*.*)")
         if os.path.isfile(self.inputfname[0]):
             self.inputfile = self.inputfname[0]
-            self.leInputImage.setPixmap(QPixmap(self.inputfile).scaledToHeight(300))
+            self.leInputImage.setPixmap(QPixmap(self.inputfile).scaledToHeight(400))
+
+
+
+
+
+    def processInputImage(self):
+
+        print("Processing")
+        r = self.imageoperator.processImage(self.inputfile)
+
+        imout = np.int8(np.floor(255*np.stack((r,)*3, axis=-1)))
+        h, w, c = imout.shape
+        bytesPerLine = w * 3
+
+        qpix = QPixmap.fromImage(QImage(imout, w, h, bytesPerLine, QImage.Format_RGB888))
+        self.leOutputImage.setPixmap(qpix.scaledToHeight(400))

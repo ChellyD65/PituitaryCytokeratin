@@ -3,11 +3,13 @@ from PyQt5.QtWidgets import QMainWindow
 
 import sys
 from pitckgui.maingui import MainGUI
-
+from pitck.imbandpass import ImageOperations
 
 
 if __name__ == '__main__':
+
+    imageops = ImageOperations()
     appctxt = ApplicationContext()
-    gallery = MainGUI()
-    gallery.show()
+    mainapp = MainGUI(imageoperator=imageops)
+    mainapp.show()
     sys.exit(appctxt.app.exec_())
