@@ -28,9 +28,8 @@ class ImageOperations():
         ihc_hed_scaled_bpdiff = ihc_hed_scaled - ihc_hed_scaled_bandpassed
         diffmean = np.sum(np.abs(ihc_hed_scaled_bpdiff))/np.size(ihc_hed_scaled_bpdiff)
         density_index = 1 - diffmean
-        print("Density index: {0:.2f}".format(density_index))
 
-        return ihc_hed_scaled_bpdiff
+        return {'density_index': density_index, 'bpdiffim': ihc_hed_scaled_bpdiff}
 
     def scaleChannel(self, img):
         #out = np.empty_like(img)
