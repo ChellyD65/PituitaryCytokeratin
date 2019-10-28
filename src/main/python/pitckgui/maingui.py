@@ -7,7 +7,7 @@ from PyQt5.QtWidgets import (QApplication, QCheckBox, QComboBox, QDateTimeEdit,
         QDial, QDialog, QGridLayout, QGroupBox, QHBoxLayout, QLabel, QLineEdit,
         QProgressBar, QPushButton, QFileDialog, QRadioButton, QScrollBar, QSizePolicy,
         QSlider, QSpinBox, QStyleFactory, QTableWidget, QTableWidgetItem, QTabWidget, QTextEdit,
-        QVBoxLayout, QWidget)
+                             QVBoxLayout, QWidget, QHeaderView)
 from PyQt5.QtGui import QPixmap, QImage, qRgb
 
 import os
@@ -20,15 +20,12 @@ class MainGUI(QDialog):
     def __init__(self, parent=None, imageoperator=None):
         super(MainGUI, self).__init__(parent)
 
+        self.inputfile = None
+        self.batchfilenames = None
+
         self.imageoperator = imageoperator
 
         self.originalPalette = QApplication.palette()
-
-        # styleComboBox = QComboBox()
-        # styleComboBox.addItems(QStyleFactory.keys())
-
-        # styleLabel = QLabel("&Style:")
-        # styleLabel.setBuddy(styleComboBox)
 
         self.btnFileOpen = QPushButton("Choose image file...")
         self.btnFileOpen.clicked.connect(self.getfile)
@@ -39,10 +36,8 @@ class MainGUI(QDialog):
         self.leOutputImage = QLabel()
         self.leOutputImage.setPixmap(QPixmap(os.path.abspath(os.path.join(os.path.dirname(os.path.realpath(__file__)),'..','..','..','resources','emptyspace.png'))).scaledToHeight(400))
 
-        #self.createTopLeftGroupBox()
-        #self.createTopRightGroupBox()
+        self.createBottomLeftTabWidget()
         self.createBottomRightTabWidget()
-        self.createBottomLeftGroupBox()
         self.createProgressBar()
 
         # Top row of GUI, with image displays
@@ -64,16 +59,32 @@ class MainGUI(QDialog):
         topLayout.addWidget(topRightLayout)
 
 
+        # Bottom row of GUI, with processing functions
+        bottomLeftLayout = QGroupBox("Processing")
+        layout = QVBoxLayout()
+        layout.addWidget(self.bottomLeftTabWidget)
+        layout.addStretch(1)
+        bottomLeftLayout.setLayout(layout)
+
+        bottomRightLayout = QGroupBox("Results")
+        layout = QVBoxLayout()
+        layout.addWidget(self.bottomRightTabWidget)
+        layout.addStretch(1)
+        bottomRightLayout.setLayout(layout)
+
+        bottomLayout = QHBoxLayout()
+        bottomLayout.addWidget(bottomLeftLayout)
+        bottomLayout.addWidget(bottomRightLayout)
 
         mainLayout = QGridLayout()
         mainLayout.addLayout(topLayout, 0, 0, 1, 2)
-        # mainLayout.addWidget(self.topLeftGroupBox, 1, 0)
-        # mainLayout.addWidget(self.topRightGroupBox, 1, 1)
+        mainLayout.addLayout(bottomLayout, 1, 0, 1, 2)
+        mainLayout.addWidget(self.bottomLeftTabWidget, 1, 0)
         mainLayout.addWidget(self.bottomRightTabWidget, 1, 1)
-        mainLayout.addWidget(self.bottomLeftGroupBox, 1, 0)
         mainLayout.addWidget(self.progressBar, 3, 0, 1, 2)
+        mainLayout.setRowStretch(0, 1)
         mainLayout.setRowStretch(1, 1)
-#        mainLayout.setRowStretch(2, 1)
+        mainLayout.setRowMinimumHeight(1, 200)
         mainLayout.setColumnStretch(0, 1)
         mainLayout.setColumnStretch(1, 1)
         self.setLayout(mainLayout)
@@ -82,50 +93,38 @@ class MainGUI(QDialog):
         QApplication.setStyle(QStyleFactory.create('Fusion'))
         QApplication.setPalette(QApplication.style().standardPalette())
 
-    def advanceProgressBar(self):
-        curVal = self.progressBar.value()
-        maxVal = self.progressBar.maximum()
-        self.progressBar.setValue(curVal + (maxVal - curVal) / 100)
 
-    # def createTopLeftGroupBox(self):
-    #     self.topLeftGroupBox = QGroupBox("Group 1")
+    def createBottomLeftTabWidget(self):
 
-    #     radioButton1 = QRadioButton("Radio button 1")
-    #     radioButton2 = QRadioButton("Radio button 2")
-    #     radioButton3 = QRadioButton("Radio button 3")
-    #     radioButton1.setChecked(True)
+        self.bottomLeftTabWidget = QTabWidget()
+        self.bottomLeftTabWidget.setSizePolicy(QSizePolicy.Preferred,
+                QSizePolicy.Ignored)
 
-    #     checkBox = QCheckBox("Tri-state check box")
-    #     checkBox.setTristate(True)
-    #     checkBox.setCheckState(Qt.PartiallyChecked)
+        tab1 = QWidget()
+        self.btnProcess = QPushButton("Process!")
+        self.btnProcess.clicked.connect(self.processInputImage)
+        tab1hbox = QHBoxLayout()
+        tab1hbox.setContentsMargins(5, 5, 5, 5)
+        tab1hbox.addWidget(self.btnProcess)
+        tab1.setLayout(tab1hbox)
 
-    #     layout = QVBoxLayout()
-    #     layout.addWidget(radioButton1)
-    #     layout.addWidget(radioButton2)
-    #     layout.addWidget(radioButton3)
-    #     layout.addWidget(checkBox)
-    #     layout.addStretch(1)
-    #     self.topLeftGroupBox.setLayout(layout)    
+        tab2 = QWidget()
+        self.batchTableWidget = QTableWidget(10,1)
+        self.batchTableWidget.setHorizontalHeaderLabels(["Filename"])
+        header = self.batchTableWidget.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
 
-    # def createTopRightGroupBox(self):
-    #     self.topRightGroupBox = QGroupBox("Group 2")
+        tab2hbox = QHBoxLayout()
+        tab2hbox.setContentsMargins(5, 5, 5, 5)
+        tab2hbox.addWidget(self.batchTableWidget)
+        self.buttonBatchLoad = QPushButton("Load Files")
+        self.buttonBatchLoad.clicked.connect(self.handleBatchLoad)
+        tab2hbox.addWidget(self.buttonBatchLoad)
+        tab2.setLayout(tab2hbox)
 
-    #     defaultPushButton = QPushButton("Default Push Button")
-    #     defaultPushButton.setDefault(True)
+        self.bottomLeftTabWidget.addTab(tab1, "&Processing")
+        self.bottomLeftTabWidget.addTab(tab2, "&Batch")
 
-    #     togglePushButton = QPushButton("Toggle Push Button")
-    #     togglePushButton.setCheckable(True)
-    #     togglePushButton.setChecked(True)
-
-    #     flatPushButton = QPushButton("Flat Push Button")
-    #     flatPushButton.setFlat(True)
-
-    #     layout = QVBoxLayout()
-    #     layout.addWidget(defaultPushButton)
-    #     layout.addWidget(togglePushButton)
-    #     layout.addWidget(flatPushButton)
-    #     layout.addStretch(1)
-    #     self.topRightGroupBox.setLayout(layout)
 
     def createBottomRightTabWidget(self):
         self.bottomRightTabWidget = QTabWidget()
@@ -135,17 +134,20 @@ class MainGUI(QDialog):
         tab1 = QWidget()
         self.tableWidget = QTableWidget(10, 2)
         self.tableWidget.setHorizontalHeaderLabels(["Filename", "Density Index"])
+        header = self.tableWidget.horizontalHeader()
+        header.setSectionResizeMode(0, QHeaderView.Stretch)
+        header.setSectionResizeMode(1, QHeaderView.ResizeToContents)
+
         self.TableRowCursor = 0
 
         tab1hbox = QHBoxLayout()
         tab1hbox.setContentsMargins(5, 5, 5, 5)
         tab1hbox.addWidget(self.tableWidget)
+
         self.buttonSave = QPushButton("Save CSV")
         self.buttonSave.clicked.connect(self.handleSave)
         tab1hbox.addWidget(self.buttonSave)
         tab1.setLayout(tab1hbox)
-
-
 
         tab2 = QWidget()
         textEdit = QTextEdit()
@@ -170,55 +172,18 @@ class MainGUI(QDialog):
         self.bottomRightTabWidget.addTab(tab1, "&Results")
         self.bottomRightTabWidget.addTab(tab2, "Free &Text")
 
-    def createBottomLeftGroupBox(self):
-        self.bottomLeftGroupBox = QGroupBox("Processing")
-        # self.bottomLeftGroupBox.setCheckable(True)
-        # self.bottomLeftGroupBox.setChecked(True)
 
-        #lineEdit = QLineEdit('s3cRe7')
-        #lineEdit.setEchoMode(QLineEdit.Password)
-
-        spinBox = QSpinBox(self.bottomLeftGroupBox)
-        spinBox.setValue(50)
-        spinBox.setEnabled(False)
-
-        #dateTimeEdit = QDateTimeEdit(self.bottomLeftGroupBox)
-        #dateTimeEdit.setDateTime(QDateTime.currentDateTime())
-
-        slider = QSlider(Qt.Horizontal, self.bottomLeftGroupBox)
-        slider.setValue(40)
-        slider.setEnabled(False)
-
-        # scrollBar = QScrollBar(Qt.Horizontal, self.bottomLeftGroupBox)
-        # scrollBar.setValue(60)
-
-        dial = QDial(self.bottomLeftGroupBox)
-        dial.setValue(30)
-        dial.setNotchesVisible(True)
-        dial.setEnabled(False)
-
-        self.btnProcess = QPushButton("Process!")
-        self.btnProcess.clicked.connect(self.processInputImage)
-
-        layout = QGridLayout()
-        #layout.addWidget(lineEdit, 0, 0, 1, 2)
-        layout.addWidget(spinBox, 1, 0, 1, 2)
-        #layout.addWidget(dateTimeEdit, 2, 0, 1, 2)
-        layout.addWidget(slider, 3, 0)
-        #layout.addWidget(scrollBar, 4, 0)
-        layout.addWidget(dial, 3, 1, 2, 1)
-        layout.addWidget(self.btnProcess)
-        layout.setRowStretch(5, 1)
-        self.bottomLeftGroupBox.setLayout(layout)
 
     def createProgressBar(self):
         self.progressBar = QProgressBar()
         self.progressBar.setRange(0, 10000)
         self.progressBar.setValue(0)
 
-        #timer = QTimer(self)
-        #timer.timeout.connect(self.advanceProgressBar)
-        #timer.start(1000)
+    def advanceProgressBar(self):
+        curVal = self.progressBar.value()
+        maxVal = self.progressBar.maximum()
+        self.progressBar.setValue(curVal + (maxVal - curVal) / 100)
+
 
     def getfile(self):
         self.inputfname = QFileDialog.getOpenFileName(self, 'Open file', 
@@ -228,29 +193,53 @@ class MainGUI(QDialog):
             self.leInputImage.setPixmap(QPixmap(self.inputfile).scaledToHeight(400))
 
 
+    def handleBatchLoad(self):
+        userlist = QFileDialog.getOpenFileNames(self, 'Open file', 
+                                                      '~',"Image files (*.*)")
+        self.batchfilenames = userlist[0]
+        self.batchTableWidget.setRowCount(len(self.batchfilenames))
+        self.batchTableWidget.clear()
+        for row in range(len(self.batchfilenames)):
+            self.inputfile = None
+            self.batchTableWidget.setItem(row-1,1,QTableWidgetItem(os.path.basename(self.batchfilenames[row])))
+
+
     def processInputImage(self):
 
-        print("Processing")
-        r = self.imageoperator.processImage(self.inputfile)
+        if (self.inputfile):
+            filelist = [self.inputfile]
+            display_output_image = True
+        elif (self.batchfilenames):
+            filelist = self.batchfilenames
+            display_output_image = False
+        else:
+            filelist = []
+            print("No input file(s) specified!")
+            return(0)
 
-        di = r['density_index']
+        self.progressBar.setRange(0, len(filelist))
+        self.progressBar.setValue(0)
+        for row in range(len(filelist)):
+            infl = filelist[row]
+            r = self.imageoperator.processImage(infl)
+            di = r['density_index']
+            
+            if (display_output_image):
+                imout = np.int8(np.floor(255*np.stack((r['bpdiffim'],)*3, axis=-1)))
+                h, w, c = imout.shape
+                bytesPerLine = w * 3
+                qpix = QPixmap.fromImage(QImage(imout, w, h, bytesPerLine, QImage.Format_RGB888))
+                self.leOutputImage.setPixmap(qpix.scaledToHeight(400))
+                
+                #print("Density index: {0:.2f}".format(di))
 
-        imout = np.int8(np.floor(255*np.stack((r['bpdiffim'],)*3, axis=-1)))
-        h, w, c = imout.shape
-        bytesPerLine = w * 3
-
-        qpix = QPixmap.fromImage(QImage(imout, w, h, bytesPerLine, QImage.Format_RGB888))
-        self.leOutputImage.setPixmap(qpix.scaledToHeight(400))
-
-        print("Density index: {0:.2f}".format(di))
-
-        nr = self.tableWidget.rowCount()
-        if nr <= self.TableRowCursor:
-            self.tableWidget.insertRow(nr)
-        self.tableWidget.setItem(self.TableRowCursor, 0, QTableWidgetItem(os.path.basename(self.inputfile)))
-        self.tableWidget.setItem(self.TableRowCursor, 1, QTableWidgetItem(str(di)))
-        self.tableWidget.resizeColumnsToContents()
-        self.TableRowCursor = self.TableRowCursor + 1
+            nr = self.tableWidget.rowCount()
+            if nr <= self.TableRowCursor:
+                self.tableWidget.insertRow(nr)
+            self.tableWidget.setItem(self.TableRowCursor, 0, QTableWidgetItem(os.path.basename(infl)))
+            self.tableWidget.setItem(self.TableRowCursor, 1, QTableWidgetItem(str(di)))
+            self.TableRowCursor = self.TableRowCursor + 1
+            self.progressBar.setValue(row+1)
 
 
 
