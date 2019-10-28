@@ -1,0 +1,9 @@
+[Desktop Entry]
+Name=PituitaryCytokeratin
+Type=Application
+Exec=/opt/PituitaryCytokeratin/PituitaryCytokeratin
+Terminal=false
+NoDisplay=false
+Categories=Utility;
+Version=0.0.0
+Icon=PituitaryCytokeratin
