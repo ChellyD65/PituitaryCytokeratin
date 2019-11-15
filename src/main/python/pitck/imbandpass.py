@@ -18,6 +18,11 @@ class ImageOperations():
 
     def __init__(self):
         self.ChannelOfInterest = 2
+        self.lims = [6, 60]
+
+
+    def setlims(self, lims):
+        self.lims = lims
 
     def processImage(self,fname):
 
@@ -94,7 +99,7 @@ class ImageOperations():
     def getPSDPolarMean(self, image):
         return getPolarMean(PowerSpectrumImage(image))
 
-    def bandPass(self, img, lims = [6,60]):
+    def bandPass(self, img):
 
         # bandPass method
         # 2D bandpass filter (with hard cutoffs; may produce ringing)
@@ -109,6 +114,9 @@ class ImageOperations():
 
         # Set r and c to be the number of rows and columns of the array.
         r, c = im_fft2.shape
+
+
+        lims = self.lims
 
         im_fft2[0:lims[0]] = 0
         im_fft2[lims[1]:r-lims[1]] = 0

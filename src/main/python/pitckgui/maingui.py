@@ -102,10 +102,28 @@ class MainGUI(QDialog):
 
         tab1 = QWidget()
         self.btnProcess = QPushButton("Process!")
+        self.btnProcess.setStyleSheet("font: bold;background-color: green;font-size: 36px;height: 48px;width: 300px;")
         self.btnProcess.clicked.connect(self.processInputImage)
+
+        self.dial = QDial()
+        self.dial.setMinimum(1)
+        self.dial.setMaximum(20)
+        self.dial.setValue(6)
+        self.dial.setSingleStep(1)
+        self.dial.setNotchesVisible(True)
+        self.dial.valueChanged.connect(self.handleDialMove)
+
+        self.SpaceConstLabel = QLabel()
+        self.SpaceConstLabel.setText("Space Constant: " + str(self.dial.value()))
+
         tab1hbox = QHBoxLayout()
         tab1hbox.setContentsMargins(5, 5, 5, 5)
+        tab1hbox.addStretch(0)
         tab1hbox.addWidget(self.btnProcess)
+        tab1hbox.addStretch(0)
+        tab1hbox.addWidget(self.dial)
+        tab1hbox.addWidget(self.SpaceConstLabel)
+        tab1hbox.addStretch(0)
         tab1.setLayout(tab1hbox)
 
         tab2 = QWidget()
@@ -193,6 +211,9 @@ class MainGUI(QDialog):
             self.leInputImage.setPixmap(QPixmap(self.inputfile).scaledToHeight(400))
 
 
+    def handleDialMove(self):
+        self.SpaceConstLabel.setText("Space Constant: " + str(self.dial.value()))
+
     def handleBatchLoad(self):
         userlist = QFileDialog.getOpenFileNames(self, 'Open file', 
                                                       '~',"Image files (*.*)")
@@ -216,6 +237,8 @@ class MainGUI(QDialog):
             filelist = []
             print("No input file(s) specified!")
             return(0)
+
+        self.imageoperator.setlims([self.dial.value(), 10*self.dial.value()])
 
         self.progressBar.setRange(0, len(filelist))
         self.progressBar.setValue(0)
